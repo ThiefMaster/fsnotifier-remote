@@ -39,16 +39,26 @@ class LocalMonitorThread(Thread):
         self.shutdown = False
 
     def run(self):
+        command = None
         while not self.shutdown:
             for line in local_watcher.stdout.readlines():
                 line = line.strip().decode('utf-8')
                 if line not in ('UNWATCHEABLE', '#', 'REMAP'):
-                    with lock:
-                        sys.stdout.write(line + '\n')
-                        sys.stdout.flush()
-                        if config['log']['verbose']:
-                            logfile.write('<< {}\n'.format(line))
-                            logfile.flush()
+                    if '\\' not in line:  # not a path, must be a command
+                        command = line
+                    elif not command:
+                        logfile.write('!! Received path but no command has been buffered\n')
+                        logfile.flush()
+                    else:
+                        with lock:
+                            sys.stdout.write(command + '\n')
+                            sys.stdout.write(line + '\n')
+                            sys.stdout.flush()
+                            if config['log']['verbose']:
+                                logfile.write('<< {}\n'.format(command))
+                                logfile.write('<< {}\n'.format(line))
+                                logfile.flush()
+                            command = None
             time.sleep(0.1)
 
 
@@ -58,14 +68,19 @@ class RemoteMonitorThread(Thread):
         self.shutdown = False
 
     def run(self):
+        command = None
         while not self.shutdown:
             line = ssh_stdout.readline().strip()
             if not line:
                 time.sleep(0.1)
                 continue
             if line not in ('UNWATCHEABLE', '#', 'REMAP'):
-                # TODO: buffer command + path and write both lines at once to avoid race conditions!
-                if line[0] == '/':  # seems to be a path
+                if line[0] != '/':  # not a path, must be a command
+                    command = line
+                elif not command:
+                    logfile.write('!! Received path but no command has been buffered\n')
+                    logfile.flush()
+                else:
                     for prefix, drive in config['reverse_mapping'].items():
                         if line.startswith(prefix):
                             line = ntpath.join(drive, ntpath.normpath(line[len(prefix):]))
@@ -74,12 +89,15 @@ class RemoteMonitorThread(Thread):
                         logfile.write('!! Got unmapped path: {}'.format(line))
                         logfile.flush()
                         continue
-                with lock:
-                    sys.stdout.write(line + '\n')
-                    sys.stdout.flush()
-                    if config['log']['verbose']:
-                        logfile.write('<< {}\n'.format(line))
-                        logfile.flush()
+                    with lock:
+                        sys.stdout.write(command + '\n')
+                        sys.stdout.write(line + '\n')
+                        sys.stdout.flush()
+                        if config['log']['verbose']:
+                            logfile.write('<< {}\n'.format(command))
+                            logfile.write('<< {}\n'.format(line))
+                            logfile.flush()
+                        command = None
 
 
 def main():
