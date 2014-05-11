@@ -1,0 +1,23 @@
+log:
+  # Logging will records any data received on stdin
+  enabled: true
+  # Verbose logging will also records any notifications we write to stdout.
+  verbose: false
+  # With verbose logging enabled, the log file MUST be on a DRIVE that is not monitored.
+  # Otherwise the log file will grow very fast since any write on a monitored drive will
+  # trigger a new log entry which in turn will cause another write notification.
+  file: D:/fsnotifier-remote.log
+fsnotifier:
+  # Path to the original fsnotifier.exe
+  local: C:/PyCharm3/bin/fsnotifier.exe
+  # Path to the remote fsnotifier or fsnotifier64
+  remote: /home/myself/dev/fsnotifier-remote/linux/fsnotifier64
+ssh:
+  # Hostname of the remote machine
+  host: linuxbox
+  # Username for the remote machine
+  user: myself
+  # Authentication is always done via agent (i.e. Pageant)
+mapping:
+  # Drive letter => remote path mappings
+  X: /home/myself

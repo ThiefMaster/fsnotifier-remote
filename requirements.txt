@@ -1,0 +1,5 @@
+pyyaml
+cx-Freeze
+paramiko
+pycrypto
+sarge
