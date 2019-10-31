@@ -118,7 +118,7 @@ def main():
 
     # Local notifier
     local_stdin = sarge.Feeder()
-    local_watcher = sarge.run(config['fsnotifier']['local'], stdout=sarge.Capture(), input=local_stdin, async=True)
+    local_watcher = sarge.run(config['fsnotifier']['local'], stdout=sarge.Capture(), input=local_stdin, async_=True)
     local_monitor = LocalMonitorThread(daemon=True)
 
     # Remote notifier
